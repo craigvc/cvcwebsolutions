@@ -1,0 +1,22 @@
+services:
+  cvc-websolutions:
+    image: cvc-websolutions
+    container_name: cvc-websolutions
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cvc-websolutions.rule=Host(`cvcwebsolutions.cvcdev1.com`)"
+      - "traefik.http.routers.cvc-websolutions.entrypoints=websecure"
+      - "traefik.http.routers.cvc-websolutions.tls.certresolver=cloudflare"
+      - "traefik.http.services.cvc-websolutions.loadbalancer.server.port=3000"
+      - "com.portainer.weburl=https://cvcwebsolutions.cvcdev1.com"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+
+networks:
+  traefik:
+    external: true

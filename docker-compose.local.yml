@@ -1,0 +1,25 @@
+services:
+  cvc-websolutions-local:
+    build: .
+    container_name: cvc-websolutions-local
+    restart: unless-stopped
+    ports:
+      - "8010:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./next.config.js:/app/next.config.js
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    networks:
+      - cvc-websolutions-network
+
+networks:
+  cvc-websolutions-network:
+    driver: bridge

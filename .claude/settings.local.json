@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker inspect:*)",
+      "Bash(npm run build:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(mv:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(ollama list:*)",
+      "WebSearch",
+      "WebFetch(domain:ollama.com)",
+      "Bash(curl:*)",
+      "Bash(docker version:*)",
+      "Bash(npm run:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx --yes create-next-app@latest magecommunications --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --no-eslint)",
+      "Bash(dir:*)",
+      "Read(I:\\CVC-Projects\\cvc-marketing-suite\\src\\app/**)",
+      "Read(I:\\CVC-Projects\\cvc-marketing-suite\\src\\app\\portfolio/**)",
+      "Read(I:\\CVC-Projects\\cvc-marketing-suite\\src\\app\\blog/**)",
+      "Bash(docker build:*)",
+      "Bash(docker rm:*)"
+    ],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "G:\\CVC Web"
+    ]
+  }
+}
