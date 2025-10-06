@@ -41,8 +41,8 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy package.json for reference
 COPY --from=builder /app/package.json ./package.json
 
-# Install sharp for image optimization only
-RUN npm install sharp --legacy-peer-deps --production
+# Install sharp and libsql bindings for Alpine Linux
+RUN npm install sharp @libsql/linux-x64-musl --legacy-peer-deps --production
 
 # Copy data directory structure (create if doesn't exist)
 RUN mkdir -p /app/data
