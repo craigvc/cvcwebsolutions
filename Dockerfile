@@ -12,6 +12,9 @@ RUN npm install --legacy-peer-deps
 # Copy application code
 COPY . .
 
+# Create data directory for SQLite database before build
+RUN mkdir -p /app/data
+
 # Set production environment (blocks admin routes via middleware)
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
