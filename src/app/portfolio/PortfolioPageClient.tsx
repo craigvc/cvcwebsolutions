@@ -98,7 +98,7 @@ export function PortfolioPageClient({ initialProjects }: { initialProjects: Proj
     ? normalizedProjects 
     : normalizedProjects.filter(project => getCategoryGroup(project) === selectedCategory)
 
-  // Sort projects - featured first, then by published date (newest first)
+  // Sort projects - featured first, then by published date (newest first), then by year (newest first)
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     // Featured projects come first
     if (a.featured && !b.featured) return -1;
@@ -106,7 +106,12 @@ export function PortfolioPageClient({ initialProjects }: { initialProjects: Proj
     
     // Then sort by published_at date (newest first)
     if (a.published_at && b.published_at) {
-      return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+      const dateComparison = new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+      // If dates are equal, sort by year (newest first)
+      if (dateComparison === 0) {
+        return parseInt(b.year) - parseInt(a.year);
+      }
+      return dateComparison;
     }
     
     // Fallback to year if published_at not available
