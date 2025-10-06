@@ -21,6 +21,7 @@ services:
       # Persist uploaded media/screenshots
       - ./public/media:/app/public/media
       - ./public/screenshots:/app/public/screenshots
+      - ./public/portfolio:/app/public/portfolio
     networks:
       - cvc-network
     healthcheck:
