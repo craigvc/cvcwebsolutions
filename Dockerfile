@@ -55,7 +55,7 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./package.json
 
 # Install production dependencies for puppeteer and sharp
-RUN npm install puppeteer sharp --production
+RUN npm install puppeteer sharp --legacy-peer-deps --production
 
 # Copy data directory structure (create if doesn't exist)
 RUN mkdir -p /app/data
