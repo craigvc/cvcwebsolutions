@@ -27,20 +27,7 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install Chromium and dependencies for Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    && rm -rf /var/cache/apk/*
-
-# Tell Puppeteer to use installed Chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# No Chromium/Puppeteer needed in production - screenshots are pre-generated
 
 # Add non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -54,8 +41,8 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy package.json for reference
 COPY --from=builder /app/package.json ./package.json
 
-# Install production dependencies for puppeteer and sharp
-RUN npm install puppeteer sharp --legacy-peer-deps --production
+# Install sharp for image optimization only
+RUN npm install sharp --legacy-peer-deps --production
 
 # Copy data directory structure (create if doesn't exist)
 RUN mkdir -p /app/data
