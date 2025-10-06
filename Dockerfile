@@ -37,12 +37,14 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules/@libsql ./node_modules/@libsql
+COPY --from=builder /app/node_modules/libsql ./node_modules/libsql
 
 # Copy package.json for reference
 COPY --from=builder /app/package.json ./package.json
 
-# Install sharp and libsql bindings for Alpine Linux
-RUN npm install sharp @libsql/linux-x64-musl --legacy-peer-deps --production
+# Install sharp for image optimization
+RUN npm install sharp --legacy-peer-deps --production
 
 # Copy data directory structure (create if doesn't exist)
 RUN mkdir -p /app/data
