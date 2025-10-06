@@ -1,16 +1,74 @@
+# Dependencies
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build output
 .next
-.git
+out
+
+# Environment files (provided separately)
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-nul
-*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
 .vscode
 .idea
-public/screenshots
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+nul
+
+# Testing
+coverage
+.nyc_output
+
+# Logs
+*.log
+.cache
+
+# Local data (mounted as volumes)
+/data
+/public/media
+/public/screenshots
+/public/portfolio
+
+# Documentation
+README.md
+PORTFOLIO_SCRIPTS_README.md
+memory-bank
+
+# Scripts (not needed in production)
+add-*.js
+check-*.js
+create-*.js
+debug-*.js
+delete-*.js
+download-*.js
+extract-*.js
+find-*.js
+fix-*.js
+generate-*.js
+migrate-*.js
+regenerate-*.js
+seed-*.js
+setup-*.js
+simple-*.js
+split-*.js
+test-*.js
+update-*.js
+upload-*.js
+index.js
+payload.config.ts

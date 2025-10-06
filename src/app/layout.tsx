@@ -18,6 +18,11 @@ const geistMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "CVC Web Solutions - Managed Hosting Services",
   description: "Fully managed WordPress and Magento hosting with enterprise-grade security, daily backups, and 24/7 expert support. Hands-off hosting experience.",
+  icons: {
+    icon: '/cvc-logo.png',
+    shortcut: '/cvc-logo.png',
+    apple: '/cvc-logo.png',
+  },
 };
 
 export default function RootLayout({

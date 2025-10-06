@@ -12,6 +12,10 @@ RUN npm ci
 # Copy application code
 COPY . .
 
+# Set production environment (blocks admin routes via middleware)
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Build the application
 RUN npm run build
 

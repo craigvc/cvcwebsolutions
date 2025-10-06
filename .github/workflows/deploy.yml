@@ -1,0 +1,71 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master  # Triggers on push to master branch
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ploi/containers/cvcwebsolutionscom
+
+            # Pull latest changes
+            echo "📥 Pulling latest code from GitHub..."
+            git pull origin master
+
+            # Create .env.production if it doesn't exist (from example)
+            if [ ! -f .env.production ]; then
+              echo "⚙️  Creating .env.production from example..."
+              cp .env.production.example .env.production
+              echo "⚠️  WARNING: Please update .env.production with real credentials!"
+            fi
+
+            # Stop existing container
+            echo "🛑 Stopping existing containers..."
+            docker-compose -f docker-compose.prod.yml down
+
+            # Build and start new container
+            echo "🔨 Building new Docker image..."
+            docker-compose -f docker-compose.prod.yml build --no-cache
+
+            echo "🚀 Starting containers..."
+            docker-compose -f docker-compose.prod.yml up -d
+
+            # Clean up old images
+            echo "🧹 Cleaning up old Docker images..."
+            docker image prune -f
+
+            # Show status
+            echo "✅ Deployment complete!"
+            docker-compose -f docker-compose.prod.yml ps
+
+            # Show recent logs
+            echo "📋 Recent logs:"
+            docker-compose -f docker-compose.prod.yml logs --tail=20
+
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to production!"
+          echo "🌐 Site: https://cvcwebsolutions.com"
+
+      - name: Deployment failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed! Check the logs above."

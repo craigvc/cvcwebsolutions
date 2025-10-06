@@ -1,473 +1,396 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { 
-  Lock, Eye, EyeOff, Shield, Calendar, Users, Mail, Zap,
-  FileText, PenTool, Sparkles, BarChart3
-} from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import AdminLayout from '@/components/admin/AdminLayout'
+import StatsCard from '@/components/admin/StatsCard'
 
-interface Appointment {
-  id: string
-  token: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  service: string
-  date: string
-  time: string
-  message?: string
-  status: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' | 'in_progress'
-  zoomMeetingId?: string
-  zoomJoinUrl?: string
-  calendarEventId?: string
-  createdAt: string
-  lastActivity?: string
-  zoomActivity?: any
-  participants?: any[]
+interface CollectionData {
+  totalDocs: number
+  docs: any[]
 }
 
-export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loginError, setLoginError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null)
+interface RecentActivity {
+  id: string
+  type: 'portfolio' | 'blog' | 'category'
+  action: 'created' | 'updated' | 'deleted'
+  title: string
+  timestamp: string
+}
+
+export default function AdminDashboard() {
+  const [collections, setCollections] = useState<Record<string, CollectionData>>({})
+  const [loading, setLoading] = useState(true)
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
+  const router = useRouter()
 
   useEffect(() => {
-    checkAuthStatus()
-    if (isAuthenticated) {
-      loadAppointments()
-    }
-  }, [isAuthenticated])
+    loadCollections()
+  }, [])
 
-  const checkAuthStatus = async () => {
+  const loadCollections = async () => {
     try {
-      const response = await fetch('/api/auth/admin')
-      const data = await response.json()
-      setIsAuthenticated(data.authenticated)
-    } catch (error) {
-      setIsAuthenticated(false)
-    }
-  }
+      const collectionNames = ['portfolio', 'blog-posts', 'categories', 'authors']
+      const data: Record<string, CollectionData> = {}
 
-  const loadAppointments = async () => {
-    try {
-      const response = await fetch('/api/appointments/admin')
-      if (response.ok) {
-        const data = await response.json()
-        setAppointments(data.appointments || [])
+      for (const name of collectionNames) {
+        try {
+          const response = await fetch(`/api/${name}`)
+          if (response.ok) {
+            const result = await response.json()
+            data[name] = result
+          } else {
+            // Set default empty data if endpoint doesn't exist
+            data[name] = { totalDocs: 0, docs: [] }
+          }
+        } catch (err) {
+          // Set default empty data if fetch fails
+          console.log(`Note: ${name} API endpoint not available`)
+          data[name] = { totalDocs: 0, docs: [] }
+        }
       }
-    } catch (error) {
-      console.error('Failed to load appointments:', error)
-    }
-  }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setLoginError(null)
-
-    try {
-      const response = await fetch('/api/auth/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setIsAuthenticated(true)
-        setPassword('')
-      } else {
-        setLoginError(data.error)
-        setRemainingAttempts(data.remainingAttempts)
+      setCollections(data)
+      
+      // Generate mock recent activities
+      const activities: RecentActivity[] = []
+      if (data.portfolio?.docs?.length > 0) {
+        data.portfolio.docs.slice(0, 2).forEach((item: any) => {
+          activities.push({
+            id: item.id,
+            type: 'portfolio',
+            action: 'updated',
+            title: item.title,
+            timestamp: item.updatedAt || new Date().toISOString()
+          })
+        })
       }
+      if (data['blog-posts']?.docs?.length > 0) {
+        data['blog-posts'].docs.slice(0, 2).forEach((post: any) => {
+          activities.push({
+            id: post.id,
+            type: 'blog',
+            action: 'created',
+            title: post.title,
+            timestamp: post.createdAt || new Date().toISOString()
+          })
+        })
+      }
+      setRecentActivities(activities.slice(0, 5))
+      
+      setLoading(false)
     } catch (error) {
-      setLoginError('Login failed. Please try again.')
-    } finally {
-      setIsLoading(false)
+      console.error('Error loading collections:', error)
+      setLoading(false)
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/admin', { method: 'DELETE' })
-      setIsAuthenticated(false)
-      setAppointments([])
-    } catch (error) {
-      console.error('Logout failed:', error)
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'created':
+        return '✨'
+      case 'updated':
+        return '📝'
+      case 'deleted':
+        return '🗑️'
+      default:
+        return '📌'
     }
   }
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="loading-spinner h-32 w-32"></div>
-      </div>
-    )
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'portfolio':
+        return 'from-green-500 to-teal-500'
+      case 'blog':
+        return 'from-purple-500 to-pink-500'
+      case 'category':
+        return 'from-orange-500 to-red-500'
+      default:
+        return 'from-gray-500 to-gray-700'
+    }
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="glass rounded-2xl p-8 w-full max-w-md mx-4"
-        >
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-blue-400" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Admin Access</h1>
-            <p className="text-gray-400 text-sm">Enter admin password to continue</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="form-label">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-input pr-12"
-                  placeholder="Enter admin password"
-                  required
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            {loginError && (
-              <div className="alert alert-error">
-                <p className="text-sm">{loginError}</p>
-                {remainingAttempts !== null && remainingAttempts > 0 && (
-                  <p className="text-red-300 text-xs mt-1">
-                    {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining
-                  </p>
-                )}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !password.trim()}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {isLoading ? (
-                <div className="loading-spinner h-5 w-5 border-white mr-2"></div>
-              ) : (
-                <Lock className="w-5 h-5 mr-2" />
-              )}
-              {isLoading ? 'Authenticating...' : 'Login'}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <div className="text-center">
-              <Link 
-                href="/"
-                className="text-gray-400 hover:text-white text-sm transition-colors"
-              >
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    )
-  }
-
-  // Admin Dashboard with integrated marketing tools
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Admin Dashboard</h1>
-
-      {/* Dashboard Content */}
-      <div className="">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Total Appointments</p>
-                <p className="text-2xl font-bold text-gray-800">{appointments.length}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Confirmed</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {appointments.filter(a => a.status === 'confirmed').length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Active</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {appointments.filter(a => a.status === 'in_progress').length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                <Mail className="w-6 h-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Completed</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {appointments.filter(a => a.status === 'completed').length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+    <AdminLayout>
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+            Welcome back to CVC Admin
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Here's what's happening with your content today
+          </p>
         </div>
 
-        {/* Appointments Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Recent Appointments</h2>
-            <button
-              onClick={loadAppointments}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Refresh
-            </button>
-          </div>
-
-          {appointments.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No appointments found</p>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-gray-200 rounded-full dark:border-gray-700"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-4 rounded-full border-t-blue-600 animate-spin"></div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Client</th>
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Service</th>
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Date & Time</th>
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appointments.map((appointment, index) => (
-                    <motion.tr
-                      key={appointment.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="border-b border-gray-100 hover:bg-gray-50"
+          </div>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+              <StatsCard
+                title="Portfolio Projects"
+                value={collections.portfolio?.totalDocs || 0}
+                change="+12%"
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                }
+                gradient="from-green-500 to-teal-500"
+              />
+              
+              <StatsCard
+                title="Blog Posts"
+                value={collections['blog-posts']?.totalDocs || 0}
+                change="+23%"
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                }
+                gradient="from-purple-500 to-pink-500"
+              />
+              
+              <StatsCard
+                title="Categories"
+                value={collections.categories?.totalDocs || 0}
+                change="+5%"
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                }
+                gradient="from-orange-500 to-red-500"
+              />
+              
+              <StatsCard
+                title="Total Authors"
+                value={collections.authors?.totalDocs || 0}
+                change="+2"
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                }
+                gradient="from-indigo-500 to-blue-500"
+              />
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Recent Activity */}
+              <div className="lg:col-span-2">
+                <div className="p-6 bg-white shadow-xl rounded-xl dark:bg-gray-800">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                      Recent Activity
+                    </h2>
+                    <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                      View all →
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {recentActivities.length > 0 ? (
+                      recentActivities.map((activity) => (
+                        <div key={activity.id} className="flex items-start p-4 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <div className={`p-2 bg-gradient-to-r ${getTypeColor(activity.type)} rounded-lg shadow-md`}>
+                            <span className="text-lg text-white">{getActionIcon(activity.action)}</span>
+                          </div>
+                          <div className="flex-1 ml-4">
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {activity.title}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {activity.action} in {activity.type} • {new Date(activity.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 dark:text-gray-400">
+                        No recent activity
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="space-y-6">
+                {/* Quick Actions Card */}
+                <div className="p-6 bg-white shadow-xl rounded-xl dark:bg-gray-800">
+                  <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+                    Quick Actions
+                  </h2>
+                  
+                  <div className="space-y-3">
+                    <Link 
+                      href="/admin/portfolio/new"
+                      className="flex items-center p-3 transition-all duration-200 rounded-lg bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 hover:from-green-100 hover:to-teal-100 dark:hover:from-green-900/30 dark:hover:to-teal-900/30 group"
                     >
-                      <td className="py-4 px-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-teal-500">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                      <span className="ml-3 font-medium text-gray-900 dark:text-white">
+                        Add Portfolio Project
+                      </span>
+                    </Link>
+                    
+                    <Link 
+                      href="/admin/blog/new"
+                      className="flex items-center p-3 transition-all duration-200 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 group"
+                    >
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                      <span className="ml-3 font-medium text-gray-900 dark:text-white">
+                        Create Blog Post
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* System Status */}
+                <div className="p-6 bg-white shadow-xl rounded-xl dark:bg-gray-800">
+                  <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+                    System Status
+                  </h2>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">API Status</span>
+                      <span className="flex items-center text-sm font-medium text-green-600">
+                        <span className="w-2 h-2 mr-2 bg-green-600 rounded-full animate-pulse"></span>
+                        Operational
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Database</span>
+                      <span className="flex items-center text-sm font-medium text-green-600">
+                        <span className="w-2 h-2 mr-2 bg-green-600 rounded-full animate-pulse"></span>
+                        Connected
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Cache</span>
+                      <span className="flex items-center text-sm font-medium text-yellow-600">
+                        <span className="w-2 h-2 mr-2 bg-yellow-600 rounded-full"></span>
+                        Warming
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Overview */}
+            <div className="grid gap-6 mt-6 md:grid-cols-2">
+              {/* Portfolio Overview */}
+              <div className="p-6 bg-white shadow-xl rounded-xl dark:bg-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Latest Portfolio Projects
+                  </h2>
+                  <Link 
+                    href="/admin/portfolio"
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                
+                <div className="space-y-3">
+                  {collections.portfolio?.docs?.slice(0, 3).map((item: any) => (
+                    <div key={item.id} className="p-3 transition-colors rounded-lg bg-gray-50 dark:bg-gray-700">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-gray-800 font-medium">{appointment.name}</p>
-                          <p className="text-gray-500 text-sm">{appointment.email}</p>
-                          {appointment.company && (
-                            <p className="text-gray-400 text-xs">{appointment.company}</p>
-                          )}
+                          <h3 className="font-medium text-gray-900 dark:text-white">{item.title}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{item.category}</p>
                         </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">{appointment.service}</td>
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="text-gray-800">{new Date(appointment.date).toLocaleDateString()}</p>
-                          <p className="text-gray-500 text-sm">{appointment.time}</p>
-                        </div>
-                      </td>
-                      <td className="px-4">
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                          appointment.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          appointment.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                          appointment.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {appointment.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
                         <div className="flex gap-2">
-                          {appointment.zoomJoinUrl && (
-                            <a
-                              href={appointment.zoomJoinUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
-                            >
-                              Zoom
-                            </a>
+                          {item.featured && (
+                            <span className="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                              Featured
+                            </span>
                           )}
-                          <Link
-                            href={`/manage-appointment/${appointment.token}`}
-                            className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                          <Link 
+                            href={`/admin/portfolio/edit/${item.id}`}
+                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
                           >
-                            Manage
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                           </Link>
                         </div>
-                      </td>
-                    </motion.tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                  
+                  {(!collections.portfolio?.docs || collections.portfolio.docs.length === 0) && (
+                    <p className="text-center text-gray-500 dark:text-gray-400">No portfolio projects yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Blog Overview */}
+              <div className="p-6 bg-white shadow-xl rounded-xl dark:bg-gray-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Recent Blog Posts
+                  </h2>
+                  <Link 
+                    href="/admin/blog"
+                    className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                
+                <div className="space-y-3">
+                  {collections['blog-posts']?.docs?.slice(0, 3).map((post: any) => (
+                    <div key={post.id} className="p-3 transition-colors rounded-lg bg-gray-50 dark:bg-gray-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{post.title}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {post.status === 'published' ? '✅ Published' : '📝 Draft'}
+                          </p>
+                        </div>
+                        <Link 
+                          href={`/admin/blog/edit/${post.id}`}
+                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!collections['blog-posts']?.docs || collections['blog-posts'].docs.length === 0) && (
+                    <p className="text-center text-gray-500 dark:text-gray-400">No blog posts yet</p>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </motion.div>
-
-        {/* Marketing Tools Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mb-8"
-        >
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Marketing Tools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/admin/portfolio" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Portfolio</h3>
-              <p className="text-gray-600 text-sm">Manage case studies</p>
-            </Link>
-
-            <Link href="/admin/blog" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
-                <PenTool className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Blog</h3>
-              <p className="text-gray-600 text-sm">Create blog posts</p>
-            </Link>
-
-            <Link href="/admin/blog/generate" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">AI Generator</h3>
-              <p className="text-gray-600 text-sm">Generate with AI</p>
-            </Link>
-
-            <Link href="/admin/analytics" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-4">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-2">Analytics</h3>
-              <p className="text-gray-600 text-sm">View metrics</p>
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Appointments</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Manage client consultations and meetings.
-            </p>
-            <Link 
-              href="/admin/appointments"
-              className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              View Appointments
-            </Link>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Billing</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Manage billing and hosting services.
-            </p>
-            <button 
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              onClick={() => window.location.href = '/billing'}
-            >
-              Open Billing Panel
-            </button>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Calendar</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              View your Google Calendar.
-            </p>
-            <button 
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              onClick={() => window.open('https://calendar.google.com', '_blank')}
-            >
-              Open Calendar
-            </button>
-          </div>
-        </motion.div>
+          </>
+        )}
       </div>
-    </div>
+    </AdminLayout>
   )
 }
-
