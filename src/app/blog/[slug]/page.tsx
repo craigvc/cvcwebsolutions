@@ -54,9 +54,12 @@ interface BlogPostDetail {
 
 async function getPost(slug: string): Promise<BlogPostDetail | null> {
   try {
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     // Payload CMS filtering is broken, so fetch all posts and filter client-side
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3456'}/api/blog-posts?depth=2&limit=20`,
+      `${baseUrl}/api/blog-posts?depth=2&limit=20`,
       { cache: 'no-store' }
     )
 
@@ -79,8 +82,11 @@ async function getPost(slug: string): Promise<BlogPostDetail | null> {
 
 async function getAllCategories() {
   try {
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3456'}/api/categories?limit=100`,
+      `${baseUrl}/api/categories?limit=100`,
       { cache: 'no-store' }
     )
 
@@ -98,8 +104,11 @@ async function getAllCategories() {
 
 async function getRecentPosts(limit: number = 5): Promise<BlogPostDetail[]> {
   try {
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3456'}/api/blog-posts?where[status][equals]=published&limit=${limit}&sort=-publishedAt&depth=1`,
+      `${baseUrl}/api/blog-posts?where[status][equals]=published&limit=${limit}&sort=-publishedAt&depth=1`,
       { cache: 'no-store' }
     )
 

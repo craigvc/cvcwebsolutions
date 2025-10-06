@@ -32,7 +32,9 @@ export const metadata: Metadata = {
 // Server component to fetch data
 async function getPortfolioProjects() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3456'
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     const response = await fetch(`${baseUrl}/api/portfolio`, {
       cache: 'no-store', // Always fetch fresh data
       headers: {

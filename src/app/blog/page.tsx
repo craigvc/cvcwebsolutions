@@ -71,7 +71,10 @@ interface Category {
 
 async function getPosts(): Promise<BlogPost[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3456'}/api/blog-posts?where[status][equals]=published&depth=2&limit=100&sort=-publishedAt`, {
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
+    const response = await fetch(`${baseUrl}/api/blog-posts?where[status][equals]=published&depth=2&limit=100&sort=-publishedAt`, {
       cache: 'no-store'
     })
     
@@ -97,7 +100,10 @@ async function getPosts(): Promise<BlogPost[]> {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3456'}/api/categories?limit=100`, {
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
+    const response = await fetch(`${baseUrl}/api/categories?limit=100`, {
       cache: 'no-store'
     })
     

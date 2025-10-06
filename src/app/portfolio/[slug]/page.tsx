@@ -7,10 +7,9 @@ import Link from 'next/link'
 
 async function getPortfolioBySlug(slug: string) {
   try {
-    // Use relative URL for server-side fetch
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.NEXT_PUBLIC_BASE_URL || 'https://cvcwebsolutions.com'
-      : 'http://localhost:3456'
+    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     
     const response = await fetch(`${baseUrl}/api/portfolio`, {
       cache: 'no-store',
