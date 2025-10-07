@@ -237,25 +237,6 @@ export default async function DynamicPage({ params }: { params: { slug: string }
   }
 }
 
-export async function generateStaticParams() {
-  const payload = await getPayloadClient();
-  
-  try {
-    const { docs } = await payload.find({
-      collection: 'pages',
-      where: {
-        status: {
-          equals: 'published',
-        },
-      },
-      limit: 100,
-    });
-
-    return docs.map((page: any) => ({
-      slug: page.slug,
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
-}
+// Disable static generation at build time
+// Pages will be generated on-demand (ISR)
+export const dynamicParams = true;
