@@ -38,14 +38,14 @@ jobs:
 
             # Stop existing container
             echo "🛑 Stopping existing containers..."
-            docker-compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml down
 
             # Build and start new container
             echo "🔨 Building new Docker image..."
-            docker-compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml build --no-cache
 
             echo "🚀 Starting containers..."
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d
 
             # Clean up old images
             echo "🧹 Cleaning up old Docker images..."
@@ -53,11 +53,11 @@ jobs:
 
             # Show status
             echo "✅ Deployment complete!"
-            docker-compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml ps
 
             # Show recent logs
             echo "📋 Recent logs:"
-            docker-compose -f docker-compose.prod.yml logs --tail=20
+            docker compose -f docker-compose.prod.yml logs --tail=20
 
       - name: Deployment notification
         if: success()
