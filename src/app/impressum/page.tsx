@@ -76,7 +76,7 @@ export default function ImpressumPage() {
                   <section>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Kontakt</h2>
                     <p className="leading-relaxed">
-                      Telefon: +49 (0)30 3387 5008<br />
+                      Telefon: +49 1520 9992503<br />
                       E-Mail: <a href="mailto:info@cvcwebsolutions.com" className="text-purple-500 hover:text-purple-400 transition-colors">info@cvcwebsolutions.com</a>
                     </p>
                   </section>
@@ -104,7 +104,7 @@ export default function ImpressumPage() {
                   <section>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Contact</h2>
                     <p className="leading-relaxed">
-                      Phone: +49 (0)30 3387 5008<br />
+                      Phone: +49 1520 9992503<br />
                       Email: <a href="mailto:info@cvcwebsolutions.com" className="text-purple-500 hover:text-purple-400 transition-colors">info@cvcwebsolutions.com</a>
                     </p>
                   </section>
