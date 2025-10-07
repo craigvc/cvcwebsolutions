@@ -263,15 +263,19 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      {/* Breadcrumbs */}
+      <div className="px-4 pt-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <Breadcrumbs post={post} />
+        </div>
+      </div>
+
       <div className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
 
             {/* Main Content */}
             <main className="lg:col-span-3">
-
-              {/* Breadcrumbs */}
-              <Breadcrumbs post={post} />
 
               {/* Article */}
               <article className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-xl overflow-hidden">
@@ -308,7 +312,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                   )}
 
                   {/* Title */}
-                  <h1 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white lg:text-5xl leading-tight">
+                  <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl leading-tight">
                     {post.title}
                   </h1>
 

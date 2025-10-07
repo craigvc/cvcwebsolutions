@@ -13,7 +13,6 @@ export default function Header() {
     { name: 'What We Do', href: '/services' },
     { name: 'Portfolio', href: '/portfolio' },
     { name: 'Blog', href: '/blog' },
-    { name: 'Billing', href: 'https://billing.cvcdev1.com' },
     { name: 'Contact', href: '/contact' },
   ]
 
@@ -49,7 +48,7 @@ export default function Header() {
               href="/schedule"
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-shadow"
             >
-              Talk to Us
+              Schedule a Call
             </Link>
           </div>
 
@@ -84,7 +83,7 @@ export default function Header() {
                 href="/schedule"
                 className="block text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg"
               >
-                Talk to Us
+                Schedule a Call
               </Link>
             </div>
           </div>

@@ -1,34 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-
-export const metadata: Metadata = {
-  title: 'Web Development Blog | Tech Insights & Tutorials | CVC Web Solutions',
-  description: 'Stay updated with the latest web development trends, tutorials, and insights. Expert articles on React, Next.js, AI, mobile development, and modern software engineering.',
-  openGraph: {
-    title: 'CVC Web Solutions Blog | Web Development Insights',
-    description: 'Expert articles on web development, mobile apps, AI solutions, and modern software engineering practices.',
-    type: 'website',
-    url: 'https://cvcwebsolutions.com/blog',
-    images: [
-      {
-        url: 'https://cvcwebsolutions.com/cvc-logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'CVC Web Solutions Blog',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'CVC Web Solutions Blog | Web Development Insights',
-    description: 'Expert articles on web development, mobile apps, AI, and modern software engineering.',
-    images: ['https://cvcwebsolutions.com/cvc-logo.png'],
-  },
-  alternates: {
-    canonical: 'https://cvcwebsolutions.com/blog',
-  },
-}
+import { notFound } from 'next/navigation'
 
 interface BlogPost {
   id: string
@@ -45,11 +18,6 @@ interface BlogPost {
     id: string
     name: string
     email: string
-    bio?: string
-    avatar?: {
-      url: string
-      alt?: string
-    }
   }
   categories: Array<{
     id: string
@@ -66,32 +34,57 @@ interface Category {
   slug: string
   description?: string
   color?: string
-  icon?: string
 }
 
-async function getPosts(): Promise<BlogPost[]> {
+async function getCategory(slug: string): Promise<Category | null> {
   try {
-    // Use internal URL for server-side fetching
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
+    const response = await fetch(`${baseUrl}/api/categories?where[slug][equals]=${slug}&limit=1`, {
+      cache: 'no-store'
+    })
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    return data.docs?.[0] || null
+  } catch (error) {
+    console.error('Error fetching category:', error)
+    return null
+  }
+}
+
+async function getAllPosts(): Promise<BlogPost[]> {
+  try {
     const port = process.env.PORT || '3000'
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     const response = await fetch(`${baseUrl}/api/blog-posts?where[status][equals]=published&depth=2&limit=100&sort=-publishedAt`, {
       cache: 'no-store'
     })
-    
-    if (!response.ok) {
-      console.error('Failed to fetch posts')
-      return []
-    }
-    
-    const data = await response.json()
-    const posts = data.docs || []
 
-    // Sort posts by publishedAt date (newest first) since API sorting might not be working
-    return posts.sort((a, b) => {
-      const dateA = new Date(a.publishedAt)
-      const dateB = new Date(b.publishedAt)
-      return dateB.getTime() - dateA.getTime() // Descending order (newest first)
-    })
+    if (!response.ok) return []
+
+    const data = await response.json()
+    return data.docs || []
+  } catch (error) {
+    console.error('Error fetching all posts:', error)
+    return []
+  }
+}
+
+async function getPosts(categoryId: string): Promise<BlogPost[]> {
+  try {
+    const port = process.env.PORT || '3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
+    const response = await fetch(
+      `${baseUrl}/api/blog-posts?where[status][equals]=published&where[categories][in]=${categoryId}&depth=2&limit=100&sort=-publishedAt`,
+      { cache: 'no-store' }
+    )
+
+    if (!response.ok) return []
+
+    const data = await response.json()
+    return data.docs || []
   } catch (error) {
     console.error('Error fetching posts:', error)
     return []
@@ -100,23 +93,34 @@ async function getPosts(): Promise<BlogPost[]> {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    // Use internal URL for server-side fetching
     const port = process.env.PORT || '3000'
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
     const response = await fetch(`${baseUrl}/api/categories?limit=100`, {
       cache: 'no-store'
     })
-    
-    if (!response.ok) {
-      console.error('Failed to fetch categories')
-      return []
-    }
-    
+
+    if (!response.ok) return []
+
     const data = await response.json()
     return data.docs || []
   } catch (error) {
     console.error('Error fetching categories:', error)
     return []
+  }
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const category = await getCategory(params.slug)
+
+  if (!category) {
+    return {
+      title: 'Category Not Found | CVC Web Solutions',
+    }
+  }
+
+  return {
+    title: `${category.title} | Blog | CVC Web Solutions`,
+    description: category.description || `Browse ${category.title} articles from CVC Web Solutions`,
   }
 }
 
@@ -128,11 +132,21 @@ function formatDate(date: string) {
   })
 }
 
-export default async function BlogPage() {
-  const [posts, categories] = await Promise.all([getPosts(), getCategories()])
+export default async function CategoryPage({ params }: { params: { slug: string } }) {
+  const category = await getCategory(params.slug)
+
+  if (!category) {
+    notFound()
+  }
+
+  const [posts, allPosts, categories] = await Promise.all([
+    getPosts(category.id),
+    getAllPosts(),
+    getCategories()
+  ])
 
   // Group posts by category for counting
-  const categoryPostCount = posts.reduce((acc, post) => {
+  const categoryPostCount = allPosts.reduce((acc, post) => {
     post.categories?.forEach(cat => {
       acc[cat.id] = (acc[cat.id] || 0) + 1
     })
@@ -140,7 +154,7 @@ export default async function BlogPage() {
   }, {} as Record<string, number>)
 
   // Get recent posts for sidebar
-  const recentPosts = posts.slice(0, 5)
+  const recentPosts = allPosts.slice(0, 5)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
@@ -152,20 +166,26 @@ export default async function BlogPage() {
               Home
             </Link>
             <span>/</span>
-            <span className="text-white">Blog</span>
+            <Link href="/blog" className="hover:text-purple-400 transition-colors">
+              Blog
+            </Link>
+            <span>/</span>
+            <span className="text-white">{category.title}</span>
           </nav>
         </div>
       </div>
 
       {/* Hero Section */}
       <section className="relative px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto text-center max-w-7xl">
-          <h1 className="mb-6 text-5xl font-bold text-white md:text-6xl">
-            Our Blog
+        <div className="mx-auto max-w-7xl">
+          <h1 className="mb-4 text-4xl font-bold text-white md:text-5xl">
+            {category.title}
           </h1>
-          <p className="max-w-3xl mx-auto text-xl text-gray-300">
-            Insights, tutorials, and updates from the CVC Web Solutions team
-          </p>
+          {category.description && (
+            <p className="text-xl text-gray-300">
+              {category.description}
+            </p>
+          )}
         </div>
       </section>
 
@@ -178,10 +198,10 @@ export default async function BlogPage() {
               {posts.length === 0 ? (
                 <div className="py-20 text-center">
                   <h2 className="mb-4 text-2xl font-semibold text-white">
-                    No blog posts yet
+                    No posts in this category yet
                   </h2>
                   <p className="text-gray-400">
-                    Check back soon for our latest insights and updates!
+                    Check back soon for new content!
                   </p>
                 </div>
               ) : (
@@ -217,12 +237,12 @@ export default async function BlogPage() {
                           {/* Categories */}
                           {post.categories && post.categories.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
-                              {post.categories.map((category) => (
+                              {post.categories.map((cat) => (
                                 <span
-                                  key={category.id}
+                                  key={cat.id}
                                   className="px-3 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full dark:text-purple-300 dark:bg-purple-900/30"
                                 >
-                                  {category.title}
+                                  {cat.title}
                                 </span>
                               ))}
                             </div>
@@ -246,13 +266,6 @@ export default async function BlogPage() {
                           {/* Meta */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-semibold">CVC</span>
-                                </div>
-                                <span>CVC Web Solutions</span>
-                              </div>
-                              <span>•</span>
                               <span>{formatDate(post.publishedAt)}</span>
                               {post.readingTime && (
                                 <>
@@ -284,19 +297,20 @@ export default async function BlogPage() {
                   <h3 className="mb-4 text-lg font-semibold text-white">Categories</h3>
                   <div className="space-y-2">
                     {categories.length > 0 ? (
-                      categories.map((category) => (
+                      categories.map((cat) => (
                         <Link
-                          key={category.id}
-                          href={`/blog/category/${category.slug}`}
-                          className="flex items-center justify-between p-2 transition-all rounded-lg hover:bg-gray-700/50"
+                          key={cat.id}
+                          href={`/blog/category/${cat.slug}`}
+                          className={`flex items-center justify-between p-2 transition-all rounded-lg hover:bg-gray-700/50 ${
+                            cat.id === category.id ? 'bg-gray-700/50' : ''
+                          }`}
                         >
-                          <div className="flex items-center gap-2">
-                            {category.icon && <span className="text-purple-400">{category.icon}</span>}
-                            <span className="text-sm text-gray-300">{category.title}</span>
-                          </div>
-                          {categoryPostCount[category.id] > 0 && (
+                          <span className={`text-sm ${cat.id === category.id ? 'text-purple-400 font-medium' : 'text-gray-300'}`}>
+                            {cat.title}
+                          </span>
+                          {categoryPostCount[cat.id] > 0 && (
                             <span className="px-2 py-1 text-xs text-gray-400 bg-gray-700 rounded-full">
-                              {categoryPostCount[category.id]}
+                              {categoryPostCount[cat.id]}
                             </span>
                           )}
                         </Link>
@@ -350,7 +364,6 @@ export default async function BlogPage() {
                 </div>
               </div>
             </aside>
-
           </div>
         </div>
       </section>
@@ -358,4 +371,4 @@ export default async function BlogPage() {
   )
 }
 
-export const revalidate = 60 // Revalidate every 60 seconds
+export const revalidate = 60
