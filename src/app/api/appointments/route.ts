@@ -277,7 +277,7 @@ async function sendConfirmationEmail(appointment: any): Promise<void> {
       
       <hr>
       <p style="font-size: 12px; color: #666;">
-        You can manage this appointment using the link above, or contact us directly at info@cvcwebsolutions.com or +49 (0)30 3387 5008.
+        You can manage this appointment using the link above, or contact us directly at info@cvcwebsolutions.com or +49 1520 9992503.
       </p>
     `
   }

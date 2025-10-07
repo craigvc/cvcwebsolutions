@@ -122,8 +122,8 @@ export default function ContactPageClient() {
                   </div>
                   <div>
                     <h3 className="mb-1 font-semibold text-white">Phone</h3>
-                    <a href="tel:+4930338750008" className="text-gray-300 transition-colors hover:text-purple-400">
-                      +49 (0)30 3387 5008
+                    <a href="tel:+4915209992503" className="text-gray-300 transition-colors hover:text-purple-400">
+                      +49 1520 9992503
                     </a>
                   </div>
                 </div>
@@ -340,7 +340,7 @@ export default function ContactPageClient() {
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <a
-                href="tel:+4930338750008"
+                href="tel:+4915209992503"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-purple-900 transition-all bg-white rounded-lg hover:bg-gray-100"
               >
                 <Phone className="w-5 h-5 mr-2" aria-hidden="true" />
