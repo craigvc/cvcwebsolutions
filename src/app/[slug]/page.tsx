@@ -8,20 +8,35 @@ interface PageData {
   id: string;
   title: string;
   slug: string;
-  heroTitle?: string;
-  heroSubtitle?: string;
-  content?: string;
+  hero?: {
+    headline?: string;
+    subheadline?: string;
+    ctaText?: string;
+    ctaLink?: string;
+    backgroundImage?: any;
+  };
+  content?: any; // richText field
   sections?: Array<{
     id?: string;
-    type: 'text' | 'imageText' | 'features' | 'cta' | 'faq' | 'stats' | 'testimonials';
-    content?: string;
+    sectionType: string;
     title?: string;
     subtitle?: string;
-    items?: Array<any>;
+    content?: any;
+    image?: any;
+    imagePosition?: 'left' | 'right';
+    features?: Array<any>;
+    buttonText?: string;
+    buttonLink?: string;
+    faqs?: Array<any>;
+    stats?: Array<any>;
+    testimonials?: Array<any>;
   }>;
-  seoTitle?: string;
-  seoDescription?: string;
-  seoKeywords?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    metaKeywords?: string;
+    ogImage?: any;
+  };
   status?: 'draft' | 'published';
 }
 
@@ -51,9 +66,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     }
 
     return {
-      title: page.seoTitle || page.title,
-      description: page.seoDescription || page.heroSubtitle,
-      keywords: page.seoKeywords,
+      title: page.seo?.metaTitle || page.title,
+      description: page.seo?.metaDescription || page.hero?.subheadline,
+      keywords: page.seo?.metaKeywords,
     };
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -89,17 +104,17 @@ export default async function DynamicPage({ params }: { params: { slug: string }
     return (
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
-        {(page.heroTitle || page.heroSubtitle) && (
+        {(page.hero?.headline || page.hero?.subheadline) && (
           <HeroCustomizable
-            title={page.heroTitle || page.title}
-            subtitle={page.heroSubtitle || ''}
+            title={page.hero.headline || page.title}
+            subtitle={page.hero.subheadline || ''}
             showFeatures={false}
             showButtons={false}
           />
         )}
 
         {/* Main Content */}
-        {page.content && (
+        {page.content && typeof page.content === 'string' && (
           <div className="px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
               <div 
@@ -115,7 +130,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
           <div>
             {page.sections.map((section, index) => (
               <div key={section.id || index} className="px-4 py-16 sm:px-6 lg:px-8">
-                {section.type === 'text' && section.content && (
+                {section.sectionType === 'textBlock' && section.content && (
                   <div className="max-w-4xl mx-auto">
                     <div 
                       className="prose prose-lg dark:prose-invert max-w-none"
@@ -124,14 +139,14 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                   </div>
                 )}
 
-                {section.type === 'cta' && (
+                {section.sectionType === 'cta' && (
                   <CTACustomizable
                     title={section.title || 'Ready to Get Started?'}
                     subtitle={section.subtitle || 'Let\'s build something amazing together'}
                   />
                 )}
 
-                {section.type === 'features' && section.items && (
+                {section.sectionType === 'featureCards' && section.features && (
                   <div className="mx-auto max-w-7xl">
                     <div className="mb-12 text-center">
                       {section.title && (
@@ -142,7 +157,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                       )}
                     </div>
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                      {section.items.map((item: any, itemIndex: number) => (
+                      {section.features.map((item: any, itemIndex: number) => (
                         <div key={itemIndex} className="p-6 rounded-lg shadow-md bg-card">
                           <h3 className="mb-2 text-xl font-semibold">{item.title}</h3>
                           <p className="text-muted-foreground">{item.description}</p>
@@ -152,10 +167,10 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                   </div>
                 )}
 
-                {section.type === 'stats' && section.items && (
+                {section.sectionType === 'stats' && section.stats && (
                   <div className="mx-auto max-w-7xl">
                     <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
-                      {section.items.map((item: any, itemIndex: number) => (
+                      {section.stats.map((item: any, itemIndex: number) => (
                         <div key={itemIndex}>
                           <div className="mb-2 text-4xl font-bold text-primary">{item.value}</div>
                           <div className="text-muted-foreground">{item.label}</div>
@@ -165,7 +180,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                   </div>
                 )}
 
-                {section.type === 'faq' && section.items && (
+                {section.sectionType === 'faq' && section.faqs && (
                   <div className="max-w-4xl mx-auto">
                     <div className="mb-12 text-center">
                       {section.title && (
@@ -173,7 +188,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                       )}
                     </div>
                     <div className="space-y-6">
-                      {section.items.map((item: any, itemIndex: number) => (
+                      {section.faqs.map((item: any, itemIndex: number) => (
                         <div key={itemIndex} className="p-6 rounded-lg bg-card">
                           <h3 className="mb-2 text-lg font-semibold">{item.question}</h3>
                           <p className="text-muted-foreground">{item.answer}</p>
@@ -183,7 +198,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                   </div>
                 )}
 
-                {section.type === 'testimonials' && section.items && (
+                {section.sectionType === 'testimonials' && section.testimonials && (
                   <div className="mx-auto max-w-7xl">
                     <div className="mb-12 text-center">
                       {section.title && (
@@ -191,7 +206,7 @@ export default async function DynamicPage({ params }: { params: { slug: string }
                       )}
                     </div>
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                      {section.items.map((item: any, itemIndex: number) => (
+                      {section.testimonials.map((item: any, itemIndex: number) => (
                         <div key={itemIndex} className="p-6 rounded-lg shadow-md bg-card">
                           <p className="mb-4 italic text-muted-foreground">"{item.quote}"</p>
                           <div>
