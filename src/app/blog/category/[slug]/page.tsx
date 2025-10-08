@@ -42,14 +42,19 @@ async function getCategory(slug: string): Promise<Category | null> {
   try {
     const port = process.env.PORT || '3000'
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
-    const response = await fetch(`${baseUrl}/api/categories?where[slug][equals]=${slug}&limit=1`, {
+
+    // Fetch all categories and filter client-side because API where clause isn't working
+    const response = await fetch(`${baseUrl}/api/categories?limit=100`, {
       cache: 'no-store'
     })
 
     if (!response.ok) return null
 
     const data = await response.json()
-    return data.docs?.[0] || null
+    const categories = data.docs || []
+
+    // Find the category with matching slug
+    return categories.find((cat: Category) => cat.slug === slug) || null
   } catch (error) {
     console.error('Error fetching category:', error)
     return null
