@@ -51,7 +51,18 @@
       "Bash(gh workflow run:*)",
       "Bash(gh repo edit:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(sqlite3:*)",
+      "Read(//c/Users/craig/Desktop/**)",
+      "Bash(python:*)",
+      "Bash(docker run:*)",
+      "Read(//d/UL Unreal Assets/**)",
+      "Bash(awk:*)",
+      "Read(//e/Downloads/backup-cvcwebsolutions.com-10-6-2025/public_html/**)",
+      "Bash(scp:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(xargs:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
