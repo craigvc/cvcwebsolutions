@@ -42,7 +42,7 @@ jobs:
 
             # Build and start new container
             echo "🔨 Building new Docker image..."
-            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml build
 
             echo "🚀 Starting containers..."
             docker compose -f docker-compose.prod.yml up -d
