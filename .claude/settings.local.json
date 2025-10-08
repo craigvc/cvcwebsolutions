@@ -62,7 +62,8 @@
       "Bash(scp:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(git checkout:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
