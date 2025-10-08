@@ -1,10 +1,10 @@
-version: '3.8'
-
 services:
   web:
-    image: ghcr.io/craigvc/cvcwebsolutions:latest
+    image: node:20-alpine
     container_name: cvcwebsolutions-app
     restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm install --legacy-peer-deps && npm run build && npm start"
     ports:
       - "8000:3000"
     environment:
@@ -14,9 +14,15 @@ services:
     env_file:
       - .env.production
     volumes:
-      # Persist SQLite database
+      # Mount code as volume so restarts pick up changes
+      - .:/app
+      # Persist node_modules
+      - /app/node_modules
+      # Persist build
+      - /app/.next
+      # Persist database
       - ./data:/app/data
-      # Persist uploaded media/screenshots
+      # Persist uploaded media
       - ./public/media:/app/public/media
       - ./public/screenshots:/app/public/screenshots
       - ./public/portfolio:/app/public/portfolio
@@ -27,7 +33,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 networks:
   cvc-network:
