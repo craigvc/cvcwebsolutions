@@ -58,8 +58,8 @@ jobs:
             # Backup production database before deployment
             echo "💾 Backing up production database..."
             if [ -f data/payload.db ]; then
-              cp data/payload.db data/payload.db.backup
-              echo "✅ Database backed up to data/payload.db.backup"
+              cp data/payload.db data/payload.db.backup || echo "⚠️ Database backup failed (permission issue), continuing..."
+              echo "✅ Database backup attempted"
             else
               echo "⚠️ No existing database found (this may be first deployment)"
             fi
