@@ -1,0 +1,36 @@
+name: Upload Database to Production
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  upload-database:
+    name: Upload Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload database file to production
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: 22
+          source: "data/payload.db"
+          target: "/home/ploi/cvcwebsolutions/"
+          overwrite: true
+
+      - name: Restart container to apply changes
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ploi/cvcwebsolutions
+            docker compose -f docker-compose.prod.yml restart
+            echo "✅ Database uploaded and container restarted!"
