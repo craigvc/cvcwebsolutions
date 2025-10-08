@@ -42,17 +42,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Upload database to production server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: 22
-          source: "data/payload.db"
-          target: "/home/ploi/cvcwebsolutions/"
-          overwrite: true
-
       - name: Deploy code to production server via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
