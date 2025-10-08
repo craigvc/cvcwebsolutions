@@ -78,15 +78,23 @@ async function getPosts(categoryId: string): Promise<BlogPost[]> {
   try {
     const port = process.env.PORT || '3000'
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
+
+    // Fetch all published posts and filter by category client-side
+    // because the API filter might not be working correctly
     const response = await fetch(
-      `${baseUrl}/api/blog-posts?where[status][equals]=published&where[categories][in]=${categoryId}&depth=2&limit=100&sort=-publishedAt`,
+      `${baseUrl}/api/blog-posts?where[status][equals]=published&depth=2&limit=100&sort=-publishedAt`,
       { cache: 'no-store' }
     )
 
     if (!response.ok) return []
 
     const data = await response.json()
-    return data.docs || []
+    const allPosts = data.docs || []
+
+    // Filter posts that have the matching category
+    return allPosts.filter((post: BlogPost) =>
+      post.categories?.some(cat => cat.id === categoryId)
+    )
   } catch (error) {
     console.error('Error fetching posts:', error)
     return []
