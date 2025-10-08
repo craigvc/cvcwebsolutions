@@ -32,6 +32,7 @@ export default buildConfig({
     client: {
       url: `file:${path.resolve(dirname, './data/payload.db').replace(/\\/g, '/')}`,
     },
+    push: false, // Disable automatic schema migrations
   }),
   upload: {
     limits: {

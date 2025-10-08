@@ -7,26 +7,29 @@ import Link from 'next/link'
 
 async function getPortfolioBySlug(slug: string) {
   try {
-    // Use internal URL for server-side fetching
-    const port = process.env.PORT || '3000'
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
-    
+    // Use window.location for client-side to get correct port
+    const baseUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3456')
+
     const response = await fetch(`${baseUrl}/api/portfolio`, {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
       }
     })
-    
+
     if (!response.ok) {
       console.error('Failed to fetch portfolio:', response.status)
       return null
     }
-    
+
     const data = await response.json()
     // Handle Payload CMS response structure
     const projects = data.docs || data
-    return projects.find((p: any) => p.slug === slug) || null
+    const project = projects.find((p: any) => p.slug === slug)
+    console.log('Found project:', project?.title, 'Status:', project?.status)
+    return project || null
   } catch (error) {
     console.error('Error fetching portfolio project:', error)
     return null

@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Clock, Calendar, Folder, Tag, ChevronRight, Home } from 'lucide-react'
+import ShareButtons from '@/components/ShareButtons'
 
 interface BlogPostDetail {
   id: string
@@ -82,20 +83,28 @@ async function getPost(slug: string): Promise<BlogPostDetail | null> {
 
 async function getAllCategories() {
   try {
-    // Use internal URL for server-side fetching
-    const port = process.env.PORT || '3000'
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
-    const response = await fetch(
-      `${baseUrl}/api/categories?limit=100`,
-      { cache: 'no-store' }
-    )
+    // Use database directly for accurate counts
+    const Database = require('better-sqlite3')
+    const path = require('path')
+    const dbPath = path.join(process.cwd(), 'data', 'payload.db')
+    const db = new Database(dbPath)
 
-    if (!response.ok) {
-      return []
-    }
+    const categoriesWithCounts = db.prepare(`
+      SELECT
+        c.id,
+        c.title,
+        c.slug,
+        c.updated_at,
+        COUNT(r.id) as postCount
+      FROM categories c
+      LEFT JOIN blog_posts_rels r ON c.id = r.categories_id AND r.path = 'categories'
+      LEFT JOIN blog_posts bp ON r.parent_id = bp.id AND bp.status = 'published'
+      GROUP BY c.id
+      ORDER BY c.title
+    `).all()
 
-    const data = await response.json()
-    return data.docs || []
+    db.close()
+    return categoriesWithCounts
   } catch (error) {
     console.error('Error fetching categories:', error)
     return []
@@ -190,13 +199,20 @@ function RichTextContent({ content }: { content: any }) {
         const listTag = node.listType === 'bullet' ? 'ul' : 'ol'
         const listChildren = node.children?.map(renderNode).join('') || ''
         const listClass = node.listType === 'bullet'
-          ? 'list-disc list-inside mb-6 space-y-2 text-gray-300'
-          : 'list-decimal list-inside mb-6 space-y-2 text-gray-300'
+          ? 'list-disc list-outside ml-6 mb-6 space-y-2 text-gray-300'
+          : 'list-decimal list-outside ml-6 mb-6 space-y-2 text-gray-300'
         return `<${listTag} class="${listClass}">${listChildren}</${listTag}>`
 
       case 'listitem':
-        const listItemChildren = node.children?.map(renderNode).join('') || ''
-        return `<li class="leading-relaxed">${listItemChildren}</li>`
+        const listItemChildren = node.children?.map((child) => {
+          // If child is a paragraph in a list item, render without margin
+          if (child.type === 'paragraph') {
+            const paragraphChildren = child.children?.map(renderNode).join('') || ''
+            return paragraphChildren
+          }
+          return renderNode(child)
+        }).join('') || ''
+        return `<li class="leading-relaxed pl-2">${listItemChildren}</li>`
 
       case 'root':
         const rootChildren = node.children?.map(renderNode).join('') || ''
@@ -296,28 +312,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
                 <div className="p-8 lg:p-12">
 
-                  {/* Categories */}
-                  {post.categories && post.categories.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {post.categories.map((category) => (
-                        <Link
-                          key={category.id}
-                          href={`/blog/category/${category.slug}`}
-                          className="inline-block px-3 py-1 text-sm font-medium text-purple-700 bg-purple-100 rounded-full dark:text-purple-300 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
-                        >
-                          {category.title}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-
                   {/* Title */}
                   <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl leading-tight">
                     {post.title}
                   </h1>
 
                   {/* Meta */}
-                  <div className="flex items-center gap-4 pb-8 mb-8 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap items-center gap-3 pb-8 mb-8 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-semibold">CVC</span>
@@ -334,6 +335,20 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                       <Clock className="w-4 h-4" />
                       {Math.ceil((post.content?.root?.children?.length || 1) * 0.5)} min read
                     </span>
+                    {post.categories && post.categories.length > 0 && (
+                      <>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <Folder className="w-4 h-4" />
+                          <Link
+                            href={`/blog/category/${post.categories[0].slug}`}
+                            className="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-md dark:text-purple-300 dark:bg-purple-900/50 hover:bg-purple-200 dark:hover:bg-purple-900/70 transition-colors"
+                          >
+                            {post.categories[0].title}
+                          </Link>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Excerpt */}
@@ -349,6 +364,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                   <div className="prose-custom text-gray-800 dark:text-gray-200">
                     <RichTextContent content={post.content} />
                   </div>
+
+                  {/* Social Share */}
+                  <ShareButtons
+                    url={`/blog/${post.slug}`}
+                    title={post.title}
+                    excerpt={post.excerpt}
+                  />
 
                   {/* Tags */}
                   {post.tags && post.tags.length > 0 && (
@@ -392,13 +414,16 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                           <Link
                             key={category.id}
                             href={`/blog/category/${category.slug}`}
-                            className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
+                            className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors ${
                               isActive
                                 ? 'bg-purple-600/30 text-purple-300 font-medium'
                                 : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
                             }`}
                           >
-                            {category.title}
+                            <span>{category.title}</span>
+                            <span className={`text-xs ${isActive ? 'text-purple-400' : 'text-gray-500'}`}>
+                              ({category.postCount || 0})
+                            </span>
                           </Link>
                         )
                       })}

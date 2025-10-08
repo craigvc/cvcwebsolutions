@@ -126,6 +126,9 @@ export default function Footer() {
               <Link href="/impressum" className="transition-colors hover:text-white">
                 Impressum
               </Link>
+              <Link href="/sitemap.xml" className="transition-colors hover:text-white">
+                Sitemap
+              </Link>
             </div>
           </div>
         </div>
