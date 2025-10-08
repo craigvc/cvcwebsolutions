@@ -22,7 +22,7 @@ export default function ContactPageClient() {
     setStatus('submitting')
 
     try {
-      const response = await fetch('/api/contact-form', {
+      const response = await fetch('/contact-api', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
