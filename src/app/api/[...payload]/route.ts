@@ -141,23 +141,32 @@ export async function POST(
     const params = await context.params
     const segments = params.payload || []
     const collection = segments[0]
+
+    // Exclude certain routes from Payload handling
+    const excludedRoutes = ['contact-form', 'schedule', 'webhook']
+    if (excludedRoutes.includes(collection)) {
+      return NextResponse.json({
+        error: `Route /api/${collection} is not a Payload endpoint`
+      }, { status: 404 })
+    }
+
     const body = await request.json()
-    
+
     // Initialize Payload
     const payload = await getPayload({ config })
-    
+
     // Create new document in collection
     const result = await payload.create({
       collection: collection as any,
       data: body
     })
-    
+
     return NextResponse.json(result)
-    
+
   } catch (error) {
     console.error('POST Error:', error)
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Internal Server Error' 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Internal Server Error'
     }, { status: 500 })
   }
 }
