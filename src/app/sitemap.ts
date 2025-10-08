@@ -1,12 +1,23 @@
 import { MetadataRoute } from 'next'
 import path from 'path'
+import fs from 'fs'
 import Database from 'better-sqlite3'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // Revalidate every hour
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://cvcwebsolutions.com'
 
   // Initialize database
   const dbPath = path.join(process.cwd(), 'data', 'payload.db')
+
+  // Check if database exists
+  if (!fs.existsSync(dbPath)) {
+    // Return only static pages if database doesn't exist yet
+    return getStaticPages(baseUrl)
+  }
+
   const db = new Database(dbPath)
 
   // Static pages
@@ -118,4 +129,69 @@ export default function sitemap(): MetadataRoute.Sitemap {
   db.close()
 
   return [...staticPages, ...blogPages, ...categoryPages, ...portfolioPages]
+}
+
+function getStaticPages(baseUrl: string): MetadataRoute.Sitemap {
+  return [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/services`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/portfolio`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/schedule`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/impressum`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    },
+  ]
 }
